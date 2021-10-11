@@ -34,6 +34,8 @@
     border-radius: 6px;
     margin:20px 20px;
     padding:15px;
+    max-height: 350px;
+    overflow: scroll;
     &:hover{
         cursor: pointer;
     }
@@ -67,4 +69,12 @@
 .text-fields-container{
     display: flex;
     flex-direction: column;
+}
+
+.item-product{
+    display:flex;
+    flex-direction: column;
+    border-bottom:1px solid gray;
+    padding: 20px 0px;
+    cursor: pointer;
 }

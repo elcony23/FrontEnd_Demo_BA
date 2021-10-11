@@ -8,6 +8,8 @@ import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import IconSelected from '../../img/selected.png'
 const Credit: FC<Props> = (props) => {
     
     const [openLoader,setOpenLoader] = useState(false)
@@ -19,6 +21,9 @@ const Credit: FC<Props> = (props) => {
     const [installmentID, setInstallmentID] = useState(0)
 
     const [rates, setRates] = useState({normalRate:0,punctualRate:0})
+
+    const [searchValue,setSearchValue] = useState("")
+
     useEffect(() => {
         getInstallmentsAndProducts()
     }, [])
@@ -33,9 +38,8 @@ const Credit: FC<Props> = (props) => {
     }
     const getInstallmentsAndProducts = async() => {
         try{
-            const [installments,products] = await Promise.all([WebServices.getInstallments(),WebServices.getProducts()])
+            const installments = await WebServices.getInstallments()
             setInstallments(installments)
-            setProducts(products)
         }catch(e){
             console.log(e)
         }
@@ -48,38 +52,61 @@ const Credit: FC<Props> = (props) => {
             punctualRate:getDeposit(product.price,installment.punctual_rate,installment.weeks)})
 
     }
+    const getProductsFiltered = async() => {
+        try{
+            setProducts([])
+            setOpenLoader(true)
+            setMessageLoader("Obteniendo productos")
+            const productsFiltered = await WebServices.getProductsFiltered(searchValue)
+            setProducts(productsFiltered)
+            setOpenLoader(false)
+            setMessageLoader("")
+        }catch(e){
+            console.log(e)
+        }
+    }
     const productSelected = products.filter(product=> product.id === productId)[0]
     const installmentSelected = installments.filter(product=> product.id === installmentID)[0]
+    const formatPrice = (price:number) => {
+        return price.toLocaleString('en-US', {
+            style: 'currency',
+            currency: 'USD',
+          })
+    }
     return(<div className={styles['container']}>
         <Loader message={messageLoader} open={openLoader}/>
-        <FormControl fullWidth style={{marginBottom:'40px'}}>
-        <InputLabel >Productos</InputLabel>
-            <Select
-            value={productId}
-            label="Productos"
-            onChange={handleChangeProduct}
-            >
-                {products.map((product,index) => <MenuItem key={index} value={product.id }>{product.name}</MenuItem>)}
-            </Select>
-        </FormControl>
-        <FormControl fullWidth>
-        <InputLabel>Plazos</InputLabel>
-            <Select
-            value={installmentID}
-            label="Productos"
-            onChange={handleChangeInstallment}
-            >
-                {installments.map((installment,index) => <MenuItem key={index} value={installment.id }>{installment.description}</MenuItem>)}
-            </Select>
-        </FormControl>
+        <div style={{display:'flex'}}>
+            <div style={{display:'flex',flexDirection:'column'}}>
+                <TextField onKeyPress={e => {
+                    if(e.key === 'Enter'){
+                        getProductsFiltered()
+                    }
+                }}  onChange={({target:{value}}) => setSearchValue(value)} placeholder="SKU o nombre del producto" id="standard-basic" label="Búsqueda" variant="standard" />
+                <FormControl style={{width:'250px',marginTop:40}}>
+                <InputLabel>Plazos</InputLabel>
+                    <Select
+                    value={installmentID}
+                    label="Productos"
+                    onChange={handleChangeInstallment}
+                    >
+                        {installments.map((installment,index) => <MenuItem key={index} value={installment.id }>{installment.description}</MenuItem>)}
+                    </Select>
+                </FormControl>
+            </div>
+            {products.length > 0 ? <div className={styles['product']}>
+                {products.map((product,index) => <div key={index} className={styles['item-product']} style={{...(productId === product.id && ({border:'1px solid green'}))}} onClick={() => setProductId(product.id)}> <div >{product.name} </div> <div>{product.sku}</div> </div>)}
+            </div>: null}
+        </div>
+        <div style={{display:'flex',flexDirection:'column',maxWidth:'800px'}}>
         <Button variant="contained" style={{marginTop:50}} disabled={!(productId > 0) || !(installmentID > 0)} onClick={calculateRates}>Calcular</Button>
-        {rates.normalRate > 0 && rates.punctualRate > 0 &&
-            <p>
-                Para el producto <strong>{productSelected.name}</strong> se realizaron los cálculos con un plazo de <strong>{installmentSelected.description}</strong> se calcularon las siguientes tasas
-                Tasa normal: <strong>{rates.normalRate}</strong>
-                Tasa puntual: <strong>{rates.punctualRate}</strong>
-            </p>
-        }
+            {rates.normalRate > 0 && rates.punctualRate > 0 &&
+                <p>
+                    Para el producto <strong>{productSelected.name}</strong> se realizaron los cálculos con un plazo de <strong>{installmentSelected.description}</strong> se calcularon las siguientes tasas
+                    Tasa normal: <strong>{formatPrice(rates.normalRate)}</strong>
+                    Tasa puntual: <strong>{formatPrice(rates.punctualRate)}</strong>
+                </p>
+            }
+        </div>
     </div>)
 }
 export default Credit

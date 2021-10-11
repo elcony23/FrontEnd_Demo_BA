@@ -14,12 +14,15 @@ export default {
         return await WebService.put(`${process.env.REACT_APP_LIVE_API_URL}/production/update`,{product})
     },
     async deleteProduct(productId:number):Promise<void>{
-        return await WebService.delete(`${process.env.REACT_APP_LIVE_API_URL}/production/delete${productId}`,{})
+        return await WebService.delete(`${process.env.REACT_APP_LIVE_API_URL}/production/delete/${productId}`,{})
     },
     async createInstallment(installment:IInstallment):Promise<void>{
         return await WebService.post(`${process.env.REACT_APP_LIVE_API_URL}/production/installment/create`,{...installment})
     },
     async getInstallments():Promise<IInstallment[]>{
         return await WebService.get(`${process.env.REACT_APP_LIVE_API_URL}/production/installments`,{})
+    },
+    async getProductsFiltered(search:string):Promise<IProduct[]>{
+        return await WebService.post(`${process.env.REACT_APP_LIVE_API_URL}/production/products/search`,{search})
     }
 };
